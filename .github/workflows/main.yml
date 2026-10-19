@@ -1,4 +1,4 @@
-K
+name: Build APK
 on: [push, workflow_dispatch]
 permissions:
   contents: read
