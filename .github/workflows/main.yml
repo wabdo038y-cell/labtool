@@ -30,8 +30,8 @@ jobs:
           mkdir -p gen obj
           aapt2 compile --dir app/res -o res.zip
           aapt2 link -o unsigned.apk -I $ANDROID_HOME/platforms/android-33/android.jar --manifest app/AndroidManifest.xml -R res.zip --java gen
-          javac -d obj -cp $ANDROID_HOME/platforms/android-33/android.jar app/src/com/lab/rat/*.java gen/com/lab/rat/R.java
-          d8 --output obj obj/com/lab/rat/*.class
+          javac -d obj -cp $ANDROID_HOME/platforms/android-33/android.jar app/src/com/network/wifianalyzer/*.java gen/com/network/wifianalyzer/R.java
+          d8 --output obj obj/com/network/wifianalyzer/*.class
           cd obj && zip -u ../unsigned.apk classes.dex && cd ..
           keytool -genkey -v -keystore lab.jks -keyalg RSA -keysize 2048 -validity 10000 -alias lab -storepass lab123 -keypass lab123 -dname "CN=Lab" 2>/dev/null
           apksigner sign --ks lab.jks --ks-pass pass:lab123 --out labtool.apk unsigned.apk
